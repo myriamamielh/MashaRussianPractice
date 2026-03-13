@@ -3,79 +3,739 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masha Russian Practice</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <title>Masha's Russian Practice - Standalone</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4f4f5; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fafafa;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d1d5db;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+    <!-- React and Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide-react@latest"></script>
 
-        // Simple Icons Replacement
-        const ChevronRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
-        const Settings = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+    <!-- Gemini SDK -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.run/@google/genai"
+      }
+    }
+    </script>
 
-        function App() {
-            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-            const [showSettings, setShowSettings] = useState(!apiKey);
+    <script type="text/babel" data-type="module">
+        import { GoogleGenAI } from "@google/genai";
 
-            const saveApiKey = (e) => {
-                e.preventDefault();
-                const key = e.target.api_key.value;
-                localStorage.setItem('gemini_api_key', key);
-                setApiKey(key);
-                setShowSettings(false);
+        const { useState, useEffect, useCallback, useMemo } = React;
+        const { 
+            BookOpen, 
+            ChevronRight, 
+            RotateCcw, 
+            Trophy, 
+            Loader2, 
+            Keyboard: KeyboardIcon,
+            CheckCircle2,
+            ArrowLeft,
+            Flame,
+            Medal,
+            Star,
+            Heart,
+            XCircle,
+            HelpCircle,
+            MessageCircle,
+            Send,
+            Settings,
+            ExternalLink,
+            Book
+        } = LucideReact;
+
+        // --- Utils ---
+        function cn(...classes) {
+            return classes.filter(Boolean).join(' ');
+        }
+
+        // --- Constants ---
+        const ALL_TOPICS = [
+            'Common Verbs (Grammar List)',
+            'Accusative Case',
+            'Motion Verbs',
+            'Genitive Case',
+            'Dative Case',
+            'Past Tense',
+            'Numbers & Time',
+            'Greetings & Phrases',
+            'Aspect (Perfective/Imperfective)',
+            'Instrumental Case',
+            'Prepositional Case',
+            'Adjectives Declension'
+        ];
+
+        const BADGES = [
+            { id: 'first_step', name: 'First Step', description: 'Complete your first test', icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' },
+            { id: 'explorer', name: 'Explorer', description: 'Complete 5 tests', icon: Medal, color: 'text-blue-500', bg: 'bg-blue-50' },
+            { id: 'master', name: 'Master', description: 'Complete 10 tests', icon: Trophy, color: 'text-orange-500', bg: 'bg-orange-50' },
+            { id: 'dedicated', name: 'Dedicated', description: '3-day streak!', icon: Flame, color: 'text-red-500', bg: 'bg-red-50' },
+        ];
+
+        const INITIAL_STATS = {
+            streak: 0,
+            lastCompletedDate: null,
+            totalTests: 0,
+            badges: []
+        };
+
+        const RUSSIAN_KEYS = [
+            ['Ё', 'Й', 'Ц', 'У', 'К', 'Е', 'Н', 'Г', 'Ш', 'Щ', 'З', 'Х', 'Ъ'],
+            ['Ф', 'Ы', 'В', 'А', 'П', 'Р', 'О', 'Л', 'Д', 'Ж', 'Э'],
+            ['Я', 'Ч', 'С', 'М', 'И', 'Т', 'Ь', 'Б', 'Ю']
+        ];
+
+        // --- AI Service ---
+        async function generateExercises(topic, apiKey) {
+            if (!apiKey) throw new Error("API Key missing");
+            const genAI = new GoogleGenAI({ apiKey });
+            
+            let specificContext = "";
+            if (topic === 'Common Verbs (Grammar List)') {
+                specificContext = `ONLY use these verb pairs: 
+                чувствовать/почувствовать, рассказывать/рассказать, знать/узнать, посещать/посетить, 
+                отдыхать/отдохнуть, звонить/позвонить, оставлять/оставить, возвращаться/вернуться, 
+                забывать/забыть, находить/найти, искать/поискать.`;
+            }
+
+            const prompt = `Generate 3 high-quality Russian exercises on "${topic}" (CEFR A1-B1).
+            ${specificContext}
+            Types: multiple-choice, gap-fill, translation, writing.
+            Include: level, Russian question, English translation, explanation.
+            Provide "wordHints" (word and translation) for the Russian words in the question.
+            Return JSON array. Keep sentences concise for fast loading.`;
+
+            const response = await genAI.models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                config: { responseMimeType: "application/json" }
+            });
+
+            return JSON.parse(response.text);
+        }
+
+        async function askMasha(question, exercise, userAnswer, history, apiKey) {
+            if (!apiKey) throw new Error("API Key missing");
+            const genAI = new GoogleGenAI({ apiKey });
+            
+            const prompt = `You are Masha, a friendly Russian tutor.
+            The student is working on this exercise: ${JSON.stringify(exercise)}
+            Their current answer is: "${userAnswer}"
+            
+            Student's question: "${question}"
+            
+            Previous chat history: ${JSON.stringify(history)}
+            
+            Provide a helpful, encouraging, and concise response in English (with Russian examples if needed).`;
+
+            const response = await genAI.models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: [{ role: "user", parts: [{ text: prompt }] }]
+            });
+
+            return response.text;
+        }
+
+        // --- Components ---
+
+        const RussianKeyboard = ({ onKeyPress, onBackspace, className }) => (
+            <div className={cn("bg-orange-50 p-4 rounded-2xl shadow-inner border border-orange-100 select-none", className)}>
+                <div className="flex flex-col gap-2">
+                    {RUSSIAN_KEYS.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex justify-center gap-1.5">
+                            {row.map((key) => (
+                                <button
+                                    key={key}
+                                    onClick={() => onKeyPress(key.toLowerCase())}
+                                    className="w-10 h-12 sm:w-12 sm:h-14 bg-white border border-orange-200 rounded-lg shadow-sm active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center font-medium text-zinc-800 hover:bg-orange-100/50"
+                                >
+                                    {key}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                    <div className="flex justify-center gap-1.5 mt-1">
+                        <button
+                            onClick={() => onKeyPress(' ')}
+                            className="flex-1 h-12 sm:h-14 bg-white border border-orange-200 rounded-lg shadow-sm active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center font-medium text-zinc-800 hover:bg-orange-100/50"
+                        >
+                            Space
+                        </button>
+                        <button
+                            onClick={onBackspace}
+                            className="w-20 h-12 sm:h-14 bg-orange-100 border border-orange-200 rounded-lg shadow-sm active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center font-medium text-orange-800 hover:bg-orange-200"
+                        >
+                            ⌫
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const GrammarTable = ({ title, headers, rows }) => (
+            <div className="mb-12 overflow-hidden rounded-2xl border border-orange-100 shadow-sm bg-white">
+                <div className="bg-orange-600 px-6 py-4">
+                    <h3 className="text-lg font-bold text-white">{title}</h3>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left border-collapse">
+                        <thead className="bg-zinc-800 text-white uppercase text-[10px] tracking-widest font-bold">
+                            <tr>
+                                {headers.map((h, i) => (
+                                    <th key={i} className="px-4 py-3 border-r border-zinc-700 last:border-0">{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row, i) => (
+                                <tr key={i} className={cn("border-b border-zinc-100 last:border-0", row.colorClass || "bg-white")}>
+                                    <td className="px-4 py-3 font-bold text-zinc-900 border-r border-zinc-100 bg-opacity-20">
+                                        {row.category || ""}
+                                    </td>
+                                    {row.subCategory !== undefined && (
+                                        <td className="px-4 py-3 text-zinc-600 border-r border-zinc-100 italic">
+                                            {row.subCategory}
+                                        </td>
+                                    )}
+                                    <td className="px-4 py-3 font-mono text-orange-700 border-r border-zinc-100">{row.rule}</td>
+                                    <td className="px-4 py-3 text-zinc-800 border-r border-zinc-100">{row.example}</td>
+                                    <td className="px-4 py-3 font-medium text-zinc-900">{row.usage}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+
+        const GrammarSection = () => (
+            <div className="max-w-5xl mx-auto py-8 px-4">
+                <div className="mb-10">
+                    <h2 className="text-3xl font-black text-zinc-900 mb-2">Grammar Reference</h2>
+                    <p className="text-zinc-500">Quick tables to help you master Russian cases and declensions.</p>
+                </div>
+                <GrammarTable 
+                    title="Genitive Case (Singular)"
+                    headers={["Gender", "Nom. sing ⇒ Gen. singular", "Examples", "Нет... = There isn't any..."]}
+                    rows={[
+                        { category: "Masculine", rule: "consonant ⇒ cons. + а", example: "брат ⇒ брата", usage: "Нет брата", colorClass: "bg-blue-50" },
+                        { category: "Masculine", rule: "й ⇒ я", example: "герой ⇒ героя", usage: "Нет героя", colorClass: "bg-blue-50" },
+                        { category: "Masculine", rule: "ь ⇒ я", example: "учитель ⇒ учителя", usage: "Нет учителя", colorClass: "bg-blue-50" },
+                        { category: "Feminine", rule: "а ⇒ ы", example: "вода ⇒ воды", usage: "Нет воды", colorClass: "bg-rose-50" },
+                        { category: "Feminine", rule: "я ⇒ и", example: "неделя ⇒ недели", usage: "Нет недели", colorClass: "bg-rose-50" },
+                        { category: "Feminine", rule: "ь ⇒ и", example: "дверь ⇒ двери", usage: "Нет двери", colorClass: "bg-rose-50" },
+                        { category: "Neuter", rule: "о ⇒ а", example: "лицо ⇒ лица", usage: "Нет лица", colorClass: "bg-emerald-50" },
+                    ]}
+                />
+                <GrammarTable 
+                    title="Verbs of Motion (Basic)"
+                    headers={["Action", "Imperfective", "Perfective", "Example / Usage"]}
+                    rows={[
+                        { category: "Go on foot (one way)", rule: "идти", example: "пойти", usage: "Я иду в магазин", colorClass: "bg-orange-50" },
+                        { category: "Go on foot (round trip)", rule: "ходить", example: "-", usage: "Я хожу в спортзал", colorClass: "bg-orange-50" },
+                        { category: "Fly (one way)", rule: "лететь", example: "полететь", usage: "Самолёт летит в Париж", colorClass: "bg-zinc-50" },
+                        { category: "Fly (round trip)", rule: "летать", example: "-", usage: "Я часто летаю", colorClass: "bg-zinc-50" },
+                    ]}
+                />
+            </div>
+        );
+
+        const ExerciseCard = ({ exercise, userAnswer, onAnswerChange, isSubmitted, isCorrect, apiKey }) => {
+            const [chatHistory, setChatHistory] = useState([]);
+            const [chatInput, setChatInput] = useState('');
+            const [isChatLoading, setIsChatLoading] = useState(false);
+            const [showChat, setShowChat] = useState(false);
+
+            const handleSendChat = async () => {
+                if (!chatInput.trim() || isChatLoading) return;
+                const userMsg = { role: 'user', text: chatInput };
+                setChatHistory(prev => [...prev, userMsg]);
+                setChatInput('');
+                setIsChatLoading(true);
+                try {
+                    const response = await askMasha(chatInput, exercise, userAnswer, chatHistory, apiKey);
+                    setChatHistory(prev => [...prev, { role: 'model', text: response }]);
+                } catch (error) {
+                    console.error("Chat error:", error);
+                } finally {
+                    setIsChatLoading(false);
+                }
+            };
+
+            const renderQuestion = () => {
+                if (exercise.type === 'translation') {
+                    return <h3 className="text-xl font-semibold text-zinc-900 leading-tight">{exercise.question}</h3>;
+                }
+                const words = exercise.question.split(/(\s+)/);
+                return (
+                    <div className="text-xl font-semibold text-zinc-900 leading-relaxed flex flex-wrap items-center">
+                        {words.map((part, idx) => {
+                            if (part.trim() === '') return <span key={idx} className="whitespace-pre">{part}</span>;
+                            const cleanWord = part.replace(/[.,!?;:()"]/g, '').toLowerCase();
+                            const hint = exercise.wordHints?.find(h => 
+                                h.word.toLowerCase() === cleanWord || 
+                                cleanWord.includes(h.word.toLowerCase()) ||
+                                h.word.toLowerCase().includes(cleanWord)
+                            );
+                            if (!hint) return <span key={idx}>{part}</span>;
+                            return (
+                                <span key={idx} className="group relative inline-block cursor-help border-b-2 border-dotted border-orange-400 hover:text-orange-600 transition-colors">
+                                    {part}
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-zinc-900 text-white text-sm font-medium rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap z-50 pointer-events-none shadow-xl ring-1 ring-white/20">
+                                        {hint.translation}
+                                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-900" />
+                                    </span>
+                                </span>
+                            );
+                        })}
+                    </div>
+                );
             };
 
             return (
-                <div className="min-h-screen bg-zinc-50">
-                    <nav className="bg-white border-b border-zinc-200 px-4 py-4">
-                        <div className="max-w-5xl mx-auto flex justify-between items-center">
-                            <h1 className="text-xl font-extrabold text-orange-600">MASHA RUSSIAN</h1>
-                            <button onClick={() => setShowSettings(true)} className="p-2 hover:bg-zinc-100 rounded-full">
-                                <Settings />
-                            </button>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-zinc-100">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 bg-orange-100 text-orange-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                                {exercise.type.replace('-', ' ')}
+                            </span>
+                            <span className="px-2.5 py-0.5 bg-zinc-100 text-zinc-600 text-xs font-bold rounded-full uppercase tracking-wider">
+                                Level {exercise.level}
+                            </span>
                         </div>
-                    </nav>
-
-                    <main className="max-w-5xl mx-auto px-4 py-12">
-                        {showSettings ? (
-                            <div className="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-zinc-100">
-                                <h2 className="text-2xl font-bold mb-4">Enter Gemini API Key</h2>
-                                <form onSubmit={saveApiKey}>
-                                    <input 
-                                        name="api_key" 
-                                        type="password" 
-                                        placeholder="Paste key here..." 
-                                        className="w-full p-3 border rounded-xl mb-4"
-                                        defaultValue={apiKey}
-                                    />
-                                    <button className="w-full py-3 bg-zinc-900 text-white font-bold rounded-xl">Save & Start</button>
-                                </form>
+                        {isSubmitted && (
+                            <button onClick={() => setShowChat(!showChat)} className="flex items-center gap-2 text-orange-600 font-medium text-sm hover:underline">
+                                <MessageCircle className="w-4 h-4" /> Ask Masha
+                            </button>
+                        )}
+                    </div>
+                    {renderQuestion()}
+                    {exercise.context && <p className="mt-2 text-zinc-500 italic text-sm">Context: {exercise.context}</p>}
+                    
+                    <div className="mt-4 space-y-4">
+                        {exercise.type === 'multiple-choice' ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {exercise.options?.map((option, idx) => (
+                                    <button
+                                        key={idx}
+                                        disabled={isSubmitted}
+                                        onClick={() => onAnswerChange(option)}
+                                        className={cn(
+                                            "p-4 text-left border-2 rounded-xl transition-all font-medium",
+                                            userAnswer === option ? "border-orange-600 bg-orange-50" : "border-zinc-200",
+                                            isSubmitted && option === exercise.correctAnswer && "border-emerald-500 bg-emerald-50 text-emerald-700",
+                                            isSubmitted && userAnswer === option && userAnswer !== exercise.correctAnswer && "border-rose-500 bg-rose-50 text-rose-700"
+                                        )}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
                             </div>
                         ) : (
-                            <div className="text-center">
-                                <h2 className="text-4xl font-black mb-4">Ready to practice?</h2>
-                                <p className="text-zinc-500 mb-8">Choose a topic to begin your Russian lesson.</p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {['Case Endings', 'Verb Conjugation', 'Vocabulary'].map(topic => (
-                                        <button key={topic} className="p-6 bg-white border-2 border-zinc-100 rounded-2xl text-left hover:border-orange-500 transition-all flex justify-between items-center group">
-                                            <span className="font-bold">{topic}</span>
-                                            <ChevronRight />
-                                        </button>
-                                    ))}
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={userAnswer}
+                                    onChange={(e) => onAnswerChange(e.target.value)}
+                                    placeholder="Type in Russian..."
+                                    className={cn(
+                                        "w-full p-4 text-lg border-2 rounded-xl focus:outline-none transition-all",
+                                        isSubmitted ? (isCorrect ? "border-emerald-500 bg-emerald-50" : "border-rose-500 bg-rose-50") : "border-zinc-200 focus:border-orange-500"
+                                    )}
+                                />
+                                {isSubmitted && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                        {isCorrect ? <CheckCircle2 className="text-emerald-500 w-6 h-6" /> : <XCircle className="text-rose-500 w-6 h-6" />}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {isSubmitted && !isCorrect && (
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm">
+                                <span className="font-bold">Correct answer:</span> {exercise.correctAnswer}
+                            </div>
+                        )}
+                    </div>
+
+                    {isSubmitted && (
+                        <div className="mt-6 space-y-4">
+                            {exercise.fullTranslation && (
+                                <div className="p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                    <p className="text-sm font-bold text-orange-800 uppercase tracking-widest mb-1">Translation</p>
+                                    <p className="text-zinc-800 italic">{exercise.fullTranslation}</p>
                                 </div>
+                            )}
+                            {exercise.explanation && (
+                                <div className="flex gap-3 p-4 bg-zinc-50 rounded-xl border border-zinc-200">
+                                    <HelpCircle className="w-5 h-5 text-zinc-400 shrink-0 mt-0.5" />
+                                    <p className="text-sm text-zinc-600 leading-relaxed">{exercise.explanation}</p>
+                                </div>
+                            )}
+                            {showChat && (
+                                <div className="mt-6 border-t border-zinc-100 pt-6">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">M</div>
+                                        <h4 className="font-bold text-zinc-900">Chat with Masha</h4>
+                                    </div>
+                                    <div className="space-y-4 max-h-64 overflow-y-auto mb-4 p-2">
+                                        {chatHistory.map((msg, i) => (
+                                            <div key={i} className={cn("p-3 rounded-2xl max-w-[85%] text-sm", msg.role === 'user' ? "ml-auto bg-orange-600 text-white" : "bg-zinc-100 text-zinc-800")}>
+                                                {msg.text}
+                                            </div>
+                                        ))}
+                                        {isChatLoading && <div className="bg-zinc-100 p-3 rounded-2xl w-12 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-zinc-400" /></div>}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSendChat()} placeholder="Type your question..." className="flex-1 p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none" />
+                                        <button onClick={handleSendChat} disabled={!chatInput.trim() || isChatLoading} className="p-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 disabled:opacity-50"><Send className="w-4 h-4" /></button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- Main App ---
+
+        function App() {
+            const [apiKey, setApiKey] = useState(() => localStorage.getItem('masha_api_key') || '');
+            const [showSettings, setShowSettings] = useState(!apiKey);
+            const [activeTab, setActiveTab] = useState('practice');
+            const [topic, setTopic] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [quiz, setQuiz] = useState(null);
+            const [showKeyboard, setShowKeyboard] = useState(true);
+            const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
+            const [stats, setStats] = useState(() => {
+                const saved = localStorage.getItem('masha_stats');
+                return saved ? JSON.parse(saved) : INITIAL_STATS;
+            });
+
+            useEffect(() => {
+                localStorage.setItem('masha_stats', JSON.stringify(stats));
+            }, [stats]);
+
+            const startQuiz = async (selectedTopic) => {
+                if (!apiKey) {
+                    setShowSettings(true);
+                    return;
+                }
+                setIsLoading(true);
+                setError(null);
+                setTopic(selectedTopic);
+                try {
+                    const exercises = await generateExercises(selectedTopic, apiKey);
+                    setQuiz({
+                        topic: selectedTopic,
+                        exercises,
+                        currentIndex: 0,
+                        score: 0,
+                        answers: {},
+                        isFinished: false
+                    });
+                } catch (err) {
+                    setError("Masha is a bit tired. Check your API key or try again!");
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const submitAnswer = () => {
+                if (!quiz || isAnswerSubmitted) return;
+                const currentExercise = quiz.exercises[quiz.currentIndex];
+                const isCorrect = quiz.answers[quiz.currentIndex]?.toLowerCase().trim() === currentExercise.correctAnswer.toLowerCase().trim();
+                if (isCorrect) setQuiz(prev => ({ ...prev, score: prev.score + 1 }));
+                setIsAnswerSubmitted(true);
+            };
+
+            const nextQuestion = () => {
+                if (!quiz) return;
+                if (quiz.currentIndex < quiz.exercises.length - 1) {
+                    setQuiz(prev => ({ ...prev, currentIndex: prev.currentIndex + 1 }));
+                    setIsAnswerSubmitted(false);
+                } else {
+                    finishQuiz();
+                }
+            };
+
+            const finishQuiz = () => {
+                const today = new Date().toDateString();
+                const isNewDay = stats.lastCompletedDate !== today;
+                setStats(prev => ({
+                    ...prev,
+                    totalTests: prev.totalTests + 1,
+                    streak: isNewDay ? prev.streak + 1 : prev.streak,
+                    lastCompletedDate: today,
+                    badges: [
+                        ...prev.badges,
+                        prev.totalTests + 1 >= 1 && !prev.badges.includes('first_step') ? 'first_step' : null,
+                        prev.totalTests + 1 >= 5 && !prev.badges.includes('explorer') ? 'explorer' : null,
+                        prev.totalTests + 1 >= 10 && !prev.badges.includes('master') ? 'master' : null,
+                        isNewDay && prev.streak + 1 >= 3 && !prev.badges.includes('dedicated') ? 'dedicated' : null
+                    ].filter(Boolean)
+                }));
+                setQuiz(prev => ({ ...prev, isFinished: true }));
+            };
+
+            if (showSettings) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-50">
+                        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-zinc-100">
+                            <div className="flex justify-center mb-6">
+                                <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200">
+                                    <Settings className="text-white w-8 h-8" />
+                                </div>
+                            </div>
+                            <h2 className="text-2xl font-black text-center mb-2">Welcome to Masha's!</h2>
+                            <p className="text-zinc-500 text-center mb-8">To start practicing, please enter your Gemini API Key. It's stored locally in your browser.</p>
+                            <input 
+                                type="password" 
+                                value={apiKey} 
+                                onChange={(e) => setApiKey(e.target.value)}
+                                placeholder="Enter API Key..."
+                                className="w-full p-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl mb-4 focus:outline-none focus:border-orange-500"
+                            />
+                            <button 
+                                onClick={() => { localStorage.setItem('masha_api_key', apiKey); setShowSettings(false); }}
+                                disabled={!apiKey}
+                                className="w-full py-4 bg-orange-600 text-white font-bold rounded-2xl hover:bg-orange-700 transition-colors disabled:opacity-50"
+                            >
+                                Start Learning
+                            </button>
+                            <p className="mt-6 text-xs text-zinc-400 text-center">
+                                Don't have a key? Get one for free at <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-orange-600 hover:underline">Google AI Studio</a>.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pb-20">
+                    {/* Header */}
+                    <header className="bg-white border-b border-zinc-100 sticky top-0 z-40 px-4 py-4">
+                        <div className="max-w-5xl mx-auto flex items-center justify-between">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setQuiz(null); setTopic(null); setActiveTab('practice'); }}>
+                                <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-md">
+                                    <Heart className="text-white w-5 h-5 fill-white" />
+                                </div>
+                                <div className="hidden sm:block">
+                                    <h1 className="text-xl font-black text-zinc-900 leading-none">Masha's</h1>
+                                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Russian</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
+                                    <Flame className="w-4 h-4 text-orange-600" />
+                                    <span className="text-sm font-black text-orange-700">{stats.streak}</span>
+                                </div>
+                                <button onClick={() => setShowSettings(true)} className="p-2 text-zinc-400 hover:text-zinc-600 transition-colors">
+                                    <Settings className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-5xl mx-auto px-4 pt-8">
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-20 text-center">
+                                <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                                    <Heart className="w-10 h-10 text-orange-500 fill-orange-500" />
+                                </div>
+                                <h2 className="text-2xl font-black text-zinc-900 mb-2">Masha is preparing your exercises...</h2>
+                                <p className="text-zinc-500">This usually takes about 5-10 seconds.</p>
+                            </div>
+                        ) : quiz ? (
+                            <div className="max-w-2xl mx-auto">
+                                {!quiz.isFinished ? (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center justify-between mb-8">
+                                            <button onClick={() => setQuiz(null)} className="flex items-center gap-2 text-zinc-400 hover:text-zinc-600 font-bold text-sm uppercase tracking-wider">
+                                                <ArrowLeft className="w-4 h-4" /> Quit
+                                            </button>
+                                            <div className="flex-1 mx-8 h-2 bg-zinc-100 rounded-full overflow-hidden">
+                                                <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${((quiz.currentIndex + 1) / quiz.exercises.length) * 100}%` }} />
+                                            </div>
+                                            <span className="text-sm font-black text-zinc-400">{quiz.currentIndex + 1} / {quiz.exercises.length}</span>
+                                        </div>
+
+                                        <ExerciseCard 
+                                            exercise={quiz.exercises[quiz.currentIndex]}
+                                            userAnswer={quiz.answers[quiz.currentIndex] || ''}
+                                            onAnswerChange={(val) => setQuiz(prev => ({ ...prev, answers: { ...prev.answers, [quiz.currentIndex]: val } }))}
+                                            isSubmitted={isAnswerSubmitted}
+                                            isCorrect={isAnswerSubmitted ? (quiz.answers[quiz.currentIndex]?.toLowerCase().trim() === quiz.exercises[quiz.currentIndex].correctAnswer.toLowerCase().trim()) : null}
+                                            apiKey={apiKey}
+                                        />
+
+                                        {showKeyboard && !isAnswerSubmitted && (
+                                            <RussianKeyboard 
+                                                onKeyPress={(key) => setQuiz(prev => ({ ...prev, answers: { ...prev.answers, [quiz.currentIndex]: (prev.answers[quiz.currentIndex] || '') + key } }))}
+                                                onBackspace={() => setQuiz(prev => ({ ...prev, answers: { ...prev.answers, [quiz.currentIndex]: (prev.answers[quiz.currentIndex] || '').slice(0, -1) } }))}
+                                            />
+                                        )}
+
+                                        <div className="flex gap-4 pt-4">
+                                            {!isAnswerSubmitted ? (
+                                                <button 
+                                                    onClick={submitAnswer}
+                                                    disabled={!quiz.answers[quiz.currentIndex]}
+                                                    className="flex-1 py-4 bg-zinc-900 text-white font-bold rounded-2xl hover:bg-zinc-800 transition-all disabled:opacity-50 shadow-lg"
+                                                >
+                                                    Check Answer
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    onClick={nextQuestion}
+                                                    className="flex-1 py-4 bg-orange-600 text-white font-bold rounded-2xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-100"
+                                                >
+                                                    {quiz.currentIndex === quiz.exercises.length - 1 ? 'Finish Quiz' : 'Next Question'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 space-y-8">
+                                        <div className="relative inline-block">
+                                            <div className="w-32 h-32 bg-orange-500 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-orange-200 rotate-6">
+                                                <Trophy className="text-white w-16 h-16" />
+                                            </div>
+                                            <div className="absolute -top-4 -right-4 w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white border-4 border-white">
+                                                <CheckCircle2 className="w-6 h-6" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h2 className="text-4xl font-black text-zinc-900 mb-2">Great Job!</h2>
+                                            <p className="text-zinc-500">You scored {quiz.score} out of {quiz.exercises.length} on {quiz.topic}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                                            <div className="bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
+                                                <div className="text-2xl font-black text-orange-600">+{quiz.score * 10}</div>
+                                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">XP Earned</div>
+                                            </div>
+                                            <div className="bg-white p-4 rounded-2xl border border-zinc-100 shadow-sm">
+                                                <div className="text-2xl font-black text-emerald-600">{Math.round((quiz.score / quiz.exercises.length) * 100)}%</div>
+                                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Accuracy</div>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setQuiz(null)} className="px-8 py-4 bg-zinc-900 text-white font-bold rounded-2xl hover:bg-zinc-800 transition-all shadow-xl">
+                                            Back to Dashboard
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : activeTab === 'grammar' ? (
+                            <GrammarSection />
+                        ) : (
+                            <div className="space-y-12">
+                                <section>
+                                    <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-6">Choose a Topic</h2>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {ALL_TOPICS.map((t) => (
+                                            <button
+                                                key={t}
+                                                onClick={() => startQuiz(t)}
+                                                className={cn(
+                                                    "p-6 text-left rounded-2xl border-2 transition-all group relative overflow-hidden",
+                                                    t === 'Common Verbs (Grammar List)' 
+                                                        ? "border-orange-400 bg-orange-50/50 hover:border-orange-600" 
+                                                        : "border-zinc-200 bg-white hover:border-orange-500",
+                                                    "hover:shadow-2xl hover:-translate-y-1"
+                                                )}
+                                            >
+                                                <h3 className="font-bold mb-2 text-zinc-900 group-hover:text-orange-600 transition-colors">{t}</h3>
+                                                {t === 'Common Verbs (Grammar List)' && (
+                                                    <div className="text-[10px] bg-orange-200 text-orange-800 px-2 py-0.5 rounded-full inline-block mb-2 font-bold uppercase tracking-tighter">
+                                                        Note: Grammar Verbs Only
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-2 text-xs text-orange-400 font-bold uppercase tracking-wider">
+                                                    Start <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <h2 className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-6">Your Badges</h2>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                        {BADGES.map((badge) => {
+                                            const isEarned = stats.badges.includes(badge.id);
+                                            const Icon = badge.icon;
+                                            return (
+                                                <div key={badge.id} className={cn("p-4 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-2", isEarned ? "bg-white border-orange-100 shadow-sm" : "bg-zinc-100/50 border-transparent grayscale opacity-40")}>
+                                                    <div className={cn("p-2 rounded-full", isEarned ? badge.bg : "bg-zinc-200")}>
+                                                        <Icon className={cn("w-6 h-6", isEarned ? badge.color : "text-zinc-400")} />
+                                                    </div>
+                                                    <div className="text-xs font-bold text-zinc-900">{badge.name}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
                             </div>
                         )}
                     </main>
+
+                    {/* Bottom Navigation */}
+                    {!quiz && !isLoading && (
+                        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 px-6 py-3 z-50">
+                            <div className="max-w-md mx-auto flex justify-around items-center">
+                                <button onClick={() => setActiveTab('practice')} className={cn("flex flex-col items-center gap-1 transition-colors", activeTab === 'practice' ? "text-orange-600" : "text-zinc-400")}>
+                                    <BookOpen className="w-6 h-6" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">Practice</span>
+                                </button>
+                                <button onClick={() => setActiveTab('grammar')} className={cn("flex flex-col items-center gap-1 transition-colors", activeTab === 'grammar' ? "text-orange-600" : "text-zinc-400")}>
+                                    <Book className="w-6 h-6" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">Grammar</span>
+                                </button>
+                            </div>
+                        </nav>
+                    )}
                 </div>
             );
         }
