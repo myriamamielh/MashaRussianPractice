@@ -64,7 +64,9 @@
 
     <script type="text/babel">
         // This links the Gemini engine to the rest of the code
-        const { GoogleGenerativeAI } = window.突厥语_generative_ai || window['@google/generative-ai'] || window.generative_ai;
+// Fixed Gemini connection
+        const GoogleGenerativeAI = window.generative_ai?.GoogleGenerativeAI || window['@google/generative-ai']?.GoogleGenerativeAI;
+        const GoogleGenAI = GoogleGenerativeAI;
         const GoogleGenAI = GoogleGenerativeAI;
 
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
@@ -868,8 +870,7 @@
                 </div>
             );
         }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
