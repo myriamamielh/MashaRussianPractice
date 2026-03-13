@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,11 +65,7 @@
 
     <script type="text/babel">
         // This links the Gemini engine to the rest of the code
-// Fixed Gemini connection
-        const GoogleGenerativeAI = window.generative_ai?.GoogleGenerativeAI || window['@google/generative-ai']?.GoogleGenerativeAI;
-        const GoogleGenAI = GoogleGenerativeAI;
-        const GoogleGenAI = GoogleGenerativeAI;
-
+        const GoogleGenAI = window.generative_ai?.GoogleGenerativeAI || window['@google/generative-ai']?.GoogleGenerativeAI;
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
         const { 
             BookOpen, 
@@ -870,7 +867,8 @@
                 </div>
             );
         }
-const root = ReactDOM.createRoot(document.getElementById('root'));
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
